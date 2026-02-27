@@ -1,0 +1,261 @@
+{% extends "EveryMovie/base.html" %}
+{% block content %}
+
+<div class="panel">
+  <div class="scatter" id="genreScatter" aria-label="Genre selection"></div>
+  <div class="status" id="genreStatus">Loading genres…</div>
+</div>
+
+<div class="panel">
+  <div class="controls">
+    <label class="hint">Country</label>
+    <select id="countrySelect" disabled>
+      <option value="">Select a country</option>
+      <option value="US">United States</option>
+      <option value="GB">United Kingdom</option>
+      <option value="FR">France</option>
+      <option value="DE">Germany</option>
+      <option value="IT">Italy</option>
+      <option value="ES">Spain</option>
+      <option value="NL">Netherlands</option>
+      <option value="SE">Sweden</option>
+      <option value="DK">Denmark</option>
+      <option value="NO">Norway</option>
+      <option value="PL">Poland</option>
+      <option value="TR">Turkey</option>
+      <option value="IN">India</option>
+      <option value="JP">Japan</option>
+      <option value="KR">South Korea</option>
+      <option value="CN">China</option>
+      <option value="TW">Taiwan</option>
+      <option value="HK">Hong Kong</option>
+      <option value="MX">Mexico</option>
+      <option value="BR">Brazil</option>
+      <option value="AR">Argentina</option>
+      <option value="EG">Egypt</option>
+      <option value="ZA">South Africa</option>
+      <option value="AU">Australia</option>
+    </select>
+
+    <label class="hint">Sort</label>
+    <select id="sortSelect" disabled>
+      <option value="rating">TMDb rating</option>
+      <option value="az">A–Z</option>
+    </select>
+
+    <button id="goBtn" disabled>Discover</button>
+  </div>
+
+  <div class="status" id="discoverStatus">Choose a genre to begin.</div>
+  <div class="grid" id="movieGrid"></div>
+</div>
+
+<script>
+  // ---- state ----
+  let selectedGenreId = null;
+
+  const el = {
+    scatter: document.getElementById("genreScatter"),
+    genreStatus: document.getElementById("genreStatus"),
+    country: document.getElementById("countrySelect"),
+    sort: document.getElementById("sortSelect"),
+    go: document.getElementById("goBtn"),
+    status: document.getElementById("discoverStatus"),
+    grid: document.getElementById("movieGrid"),
+  };
+
+  // ---- helpers ----
+  function setEnabled(enabled) {
+    el.country.disabled = !enabled;
+    el.sort.disabled = !enabled;
+    el.go.disabled = !enabled || !el.country.value;
+  }
+
+  function posterUrl(path) {
+    if (!path) return null;
+    return `https://image.tmdb.org/t/p/w342${path}`;
+  }
+
+  function clearGrid() {
+    el.grid.innerHTML = "";
+  }
+
+  function renderMovies(movies) {
+    clearGrid();
+
+    if (!movies || movies.length === 0) {
+      el.status.textContent = "No results. Try another country or genre.";
+      return;
+    }
+
+    for (const m of movies) {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const poster = document.createElement("div");
+      poster.className = "poster";
+
+      const url = posterUrl(m.poster_path);
+      if (url) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = m.title || m.original_title || "Movie poster";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        poster.innerHTML = "";
+        poster.appendChild(img);
+      } else {
+        poster.textContent = "No poster";
+      }
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+
+      const title = document.createElement("div");
+      title.className = "title";
+      title.textContent = m.original_title || m.title || "Untitled";
+
+      const sub = document.createElement("div");
+      sub.className = "sub";
+
+      const year = document.createElement("span");
+      year.textContent = (m.release_date ? m.release_date.slice(0,4) : "—");
+
+      const rating = document.createElement("span");
+      rating.textContent = (typeof m.vote_average === "number" ? `★ ${m.vote_average.toFixed(1)}` : "★ —");
+
+      sub.appendChild(year);
+      sub.appendChild(rating);
+
+      meta.appendChild(title);
+      meta.appendChild(sub);
+
+      card.appendChild(poster);
+      card.appendChild(meta);
+
+      el.grid.appendChild(card);
+    }
+  }
+
+  function placeChips(genres) {
+    el.scatter.innerHTML = "";
+    const W = el.scatter.clientWidth;
+    const H = el.scatter.clientHeight;
+
+    // deterministic-ish scatter: uses index-based positions so it looks consistent
+    genres.forEach((g, i) => {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = g.name;
+      chip.dataset.genreId = g.id;
+
+      // place in pseudo-random but stable positions
+      const x = ( (i * 97) % 100 ) / 100;
+      const y = ( (i * 53) % 100 ) / 100;
+
+      const left = 8 + x * (W - 120);
+      const top  = 8 + y * (H - 44);
+
+      chip.style.left = `${left}px`;
+      chip.style.top = `${top}px`;
+
+      chip.addEventListener("click", () => {
+        selectedGenreId = g.id;
+
+        // visual selection
+        document.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+        chip.classList.add("selected");
+
+        el.genreStatus.textContent = `Selected genre: ${g.name}`;
+        el.status.textContent = "Now select a country, then click Discover.";
+        setEnabled(true);
+      });
+
+      el.scatter.appendChild(chip);
+    });
+  }
+
+  async function loadGenres() {
+    el.genreStatus.textContent = "Loading genres…";
+    try {
+      const res = await fetch("/genres/");
+      if (!res.ok) throw new Error(`Genres error: ${res.status}`);
+      const data = await res.json();
+
+      // Expecting either {genres:[...]} or [...]
+      const genres = Array.isArray(data) ? data : (data.genres || []);
+      if (!genres.length) {
+        el.genreStatus.textContent = "No genres returned from /genres/.";
+        return;
+      }
+
+      el.genreStatus.textContent = "Pick a genre.";
+      placeChips(genres);
+    } catch (e) {
+      el.genreStatus.textContent = `Failed to load genres. ${e.message}`;
+    }
+  }
+
+  async function discover() {
+    if (!selectedGenreId) return;
+    if (!el.country.value) return;
+
+    const sort = el.sort.value || "rating";
+    const country = el.country.value;
+
+    el.status.textContent = "Discovering…";
+    clearGrid();
+
+    const params = new URLSearchParams({
+      genre: String(selectedGenreId),
+      country: country,
+      sort: sort,
+    });
+
+    try {
+      const res = await fetch(`/discover/?${params.toString()}`);
+      if (!res.ok) throw new Error(`Discover error: ${res.status}`);
+      const data = await res.json();
+
+      // Expecting either {results:[...]} or [...]
+      const movies = Array.isArray(data) ? data : (data.results || []);
+      el.status.textContent = `Showing ${movies.length} results.`;
+      renderMovies(movies);
+    } catch (e) {
+      el.status.textContent = `Failed to discover movies. ${e.message}`;
+    }
+  }
+
+  // ---- events ----
+  el.country.addEventListener("change", () => {
+    el.go.disabled = !selectedGenreId || !el.country.value;
+  });
+
+  el.sort.addEventListener("change", () => {
+    if (selectedGenreId && el.country.value) discover();
+  });
+
+  el.go.addEventListener("click", discover);
+
+  // initial
+  setEnabled(false);
+  loadGenres();
+
+  // re-layout chips on resize
+  window.addEventListener("resize", () => {
+    // quick re-fetchless reposition: read existing chips -> reconstruct from labels/ids
+    const chips = Array.from(document.querySelectorAll(".chip")).map(c => ({
+      id: Number(c.dataset.genreId),
+      name: c.textContent
+    }));
+    if (chips.length) placeChips(chips);
+    // preserve selected state
+    if (selectedGenreId) {
+      const sel = document.querySelector(`.chip[data-genre-id="${selectedGenreId}"]`);
+      if (sel) sel.classList.add("selected");
+    }
+  });
+</script>
+
+{% endblock %}

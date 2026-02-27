@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>EveryMovie</title>
+  <style>
+    :root {
+      --bg: #0b0b0c;
+      --fg: #f4f4f5;
+      --muted: #a1a1aa;
+      --card: #141417;
+      --stroke: #2a2a2f;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      line-height: 1.4;
+    }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 18px 60px; }
+    .topbar { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; }
+    .brand { font-size: 20px; font-weight: 650; letter-spacing: 0.2px; }
+    .hint { color: var(--muted); font-size: 13px; }
+
+    .panel {
+      margin-top: 18px;
+      background: rgba(255,255,255,0.02);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+
+    .scatter {
+      position: relative;
+      min-height: 340px;
+      border-radius: var(--radius);
+      border: 1px dashed rgba(255,255,255,0.12);
+      overflow: hidden;
+    }
+    .chip {
+      position: absolute;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--stroke);
+      background: rgba(255,255,255,0.04);
+      backdrop-filter: blur(6px);
+      cursor: pointer;
+      user-select: none;
+      transition: transform .08s ease, background .15s ease, border-color .15s ease;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    .chip:hover { transform: scale(1.03); background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.18); }
+    .chip.selected { border-color: rgba(255,255,255,0.35); background: rgba(255,255,255,0.10); }
+
+    .controls { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    select, button {
+      background: rgba(255,255,255,0.04);
+      color: var(--fg);
+      border: 1px solid var(--stroke);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 14px;
+    }
+    button { cursor: pointer; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 12px;
+    }
+    @media (max-width: 1000px) { .grid { grid-template-columns: repeat(4, 1fr);} }
+    @media (max-width: 760px) { .grid { grid-template-columns: repeat(2, 1fr);} }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      min-height: 260px;
+    }
+    .poster {
+      width: 100%;
+      aspect-ratio: 2/3;
+      background: rgba(255,255,255,0.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .meta { padding: 10px 10px 12px; display:flex; flex-direction:column; gap: 6px; }
+    .title { font-size: 13px; font-weight: 600; }
+    .sub { color: var(--muted); font-size: 12px; display:flex; justify-content: space-between; gap: 10px; }
+
+    .status { color: var(--muted); font-size: 13px; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">EveryMovie</div>
+      <div class="hint">Pick a genre → pick a country → discover.</div>
+    </div>
+    {% block content %}{% endblock %}
+  </div>
+</body>
+</html>
