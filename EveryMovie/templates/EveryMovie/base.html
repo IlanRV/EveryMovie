@@ -60,14 +60,38 @@
 
     .controls { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     select, button {
-      background: rgba(255,255,255,0.04);
+      background: var(--card);
       color: var(--fg);
       border: 1px solid var(--stroke);
       border-radius: 12px;
       padding: 10px 12px;
       font-size: 14px;
+      appearance: none;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+    }
+    select {
+      padding-right: 28px;
+      cursor: pointer;
+    }
+    select:hover {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.22);
+    }
+    select:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    /* dropdown list background in supporting browsers */
+    select option {
+      background: #050508;
+      color: var(--fg);
     }
     button { cursor: pointer; }
+    button:hover:not(:disabled) {
+      background: rgba(255,255,255,0.06);
+      border-color: rgba(255,255,255,0.22);
+    }
     button:disabled { opacity: .5; cursor: not-allowed; }
 
     .grid {

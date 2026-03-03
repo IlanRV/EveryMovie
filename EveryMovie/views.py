@@ -1,3 +1,4 @@
+import itertools
 import requests
 from django.http import JsonResponse
 from django.conf import settings
@@ -32,13 +33,88 @@ def home(request):
 
 
 def genres(request):
+    """Return official movie genres plus observed 2-genre combinations.
+
+    We keep this light by *sampling* popular / highly-rated movies and
+    deriving all 2-genre pairs that actually appear in that sample.
+    """
     url = f"{TMDB_BASE}/genre/movie/list"
     params = {
         "api_key": settings.TMDB_API_KEY,
         "language": "en-US",
     }
     response = requests.get(url, params=params, timeout=15)
-    return JsonResponse(response.json(), status=response.status_code)
+
+    # If the genre list call fails, just proxy the error payload.
+    if not response.ok:
+        return JsonResponse(response.json(), status=response.status_code)
+
+    data = response.json()
+    genres_list = data.get("genres", []) if isinstance(data, dict) else []
+
+    # Build a mapping so we can turn genre IDs back into names.
+    id_to_name = {
+        g.get("id"): g.get("name")
+        for g in genres_list
+        if isinstance(g, dict) and "id" in g and "name" in g
+    }
+
+    pairs = []
+
+    if id_to_name:
+        discover_url = f"{TMDB_BASE}/discover/movie"
+        observed_pairs = set()
+
+        # A small set of sampling queries to cover both popularity and rating.
+        sample_queries = [
+            {"sort_by": "popularity.desc"},
+            {"sort_by": "vote_average.desc", "vote_count.gte": 200},
+        ]
+
+        for query in sample_queries:
+            for page in range(1, 4):  # first 3 pages of each query
+                sample_params = {
+                    "api_key": settings.TMDB_API_KEY,
+                    "include_adult": False,
+                    "include_video": False,
+                    "language": "en-US",
+                    "page": page,
+                    **query,
+                }
+                try:
+                    r = requests.get(discover_url, params=sample_params, timeout=10)
+                except requests.RequestException:
+                    continue
+
+                if not r.ok:
+                    continue
+
+                payload = r.json()
+                for movie in payload.get("results", []):
+                    genre_ids = movie.get("genre_ids") or []
+                    # remove unknown IDs and duplicates inside a movie
+                    cleaned = sorted({gid for gid in genre_ids if gid in id_to_name})
+                    if len(cleaned) < 2:
+                        continue
+                    for g1, g2 in itertools.combinations(cleaned, 2):
+                        observed_pairs.add((g1, g2))
+
+        # Turn observed ID pairs into labelled pair objects for the frontend.
+        for g1, g2 in sorted(observed_pairs):
+            name1 = id_to_name.get(g1)
+            name2 = id_to_name.get(g2)
+            if not name1 or not name2:
+                continue
+            pairs.append(
+                {
+                    "id": f"{g1},{g2}",  # directly usable as with_genres value
+                    "ids": [g1, g2],
+                    "label": f"{name1}/{name2}",
+                }
+            )
+
+    payload = {"genres": genres_list, "pairs": pairs}
+    return JsonResponse(payload, status=response.status_code)
 
 
 def discover(request):
