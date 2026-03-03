@@ -2,7 +2,13 @@ import itertools
 import requests
 from django.http import JsonResponse
 from django.conf import settings
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
+from django.db.models import Count
+from django.contrib.auth import login, logout, authenticate
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+from django.contrib import messages
+from .models import MovieList, MovieListItem
 
 
 TMDB_BASE = "https://api.themoviedb.org/3"
@@ -30,6 +36,96 @@ def vote_threshold_from_total(total_results: int) -> int:
 
 def home(request):
     return render(request, "EveryMovie/home.html")
+
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect("home")
+    if request.method == "POST":
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password = request.POST.get("password", "")
+        password2 = request.POST.get("password2", "")
+        if not username or not email or not password:
+            messages.error(request, "All fields are required.")
+        elif password != password2:
+            messages.error(request, "Passwords do not match.")
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, "Username already taken.")
+        elif User.objects.filter(email=email).exists():
+            messages.error(request, "Email already in use.")
+        else:
+            user = User.objects.create_user(username=username, email=email, password=password)
+            login(request, user)
+            return redirect("home")
+    return render(request, "EveryMovie/signup.html")
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect("home")
+    if request.method == "POST":
+        username = request.POST.get("username", "")
+        password = request.POST.get("password", "")
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            return redirect("home")
+        else:
+            messages.error(request, "Invalid username or password.")
+    return render(request, "EveryMovie/login.html")
+
+
+def logout_view(request):
+    logout(request)
+    return redirect("home")
+
+
+def movie_detail(request, movie_id):
+    """Fetch full movie details + credits from TMDB and render the detail page."""
+    api_key = settings.TMDB_API_KEY
+
+    # Movie details (overview, vote_average, release_date, genres, runtime, etc.)
+    detail_url = f"{TMDB_BASE}/movie/{movie_id}"
+    detail_resp = requests.get(
+        detail_url,
+        params={"api_key": api_key, "language": "en-US"},
+        timeout=15,
+    )
+    if not detail_resp.ok:
+        return render(request, "EveryMovie/movie.html", {"error": "Movie not found."})
+
+    movie = detail_resp.json()
+
+    # Credits (we need the director)
+    credits_url = f"{TMDB_BASE}/movie/{movie_id}/credits"
+    credits_resp = requests.get(
+        credits_url,
+        params={"api_key": api_key, "language": "en-US"},
+        timeout=15,
+    )
+    director = None
+    cast = []
+    if credits_resp.ok:
+        credits = credits_resp.json()
+        for member in credits.get("crew", []):
+            if member.get("job") == "Director":
+                director = member.get("name")
+                break
+        cast = credits.get("cast", [])[:10]  # top 10 cast members
+
+    # User's lists (for the "Add to list" dropdown)
+    user_lists = []
+    if request.user.is_authenticated:
+        user_lists = MovieList.objects.filter(user=request.user)
+
+    context = {
+        "movie": movie,
+        "director": director,
+        "cast": cast,
+        "user_lists": user_lists,
+    }
+    return render(request, "EveryMovie/movie.html", context)
 
 
 def genres(request):
@@ -197,3 +293,187 @@ def discover(request):
         }
 
     return JsonResponse(data, status=response.status_code)
+
+
+def search_movies(request):
+    """Free-text movie search API backed by TMDB /search/movie.
+
+    Returns JSON so the frontend can render results in the same grid
+    used for genre/country discovery.
+    """
+    query = (request.GET.get("q") or "").strip()
+    page = request.GET.get("page", "1")
+
+    if not query:
+        return JsonResponse({"results": [], "error": "Missing query parameter 'q'."}, status=400)
+
+    url = f"{TMDB_BASE}/search/movie"
+    params = {
+        "api_key": settings.TMDB_API_KEY,
+        "language": "en-US",
+        "include_adult": False,
+        "page": page,
+        "query": query,
+    }
+
+    try:
+        resp = requests.get(url, params=params, timeout=15)
+    except requests.RequestException:
+        return JsonResponse({"results": [], "error": "Search service unavailable."}, status=502)
+
+    data = resp.json() if resp.ok else {"results": [], "error": "Upstream TMDB error."}
+    return JsonResponse(data, status=resp.status_code)
+
+
+def api_trending(request):
+    """Return trending-style movies, with optional country filter.
+
+    We approximate "trending this week" by taking the most popular
+    movies and optionally restricting by origin country.
+    """
+    country = (request.GET.get("country") or "").strip().upper()
+    page = request.GET.get("page", "1")
+
+    url = f"{TMDB_BASE}/discover/movie"
+    params = {
+        "api_key": settings.TMDB_API_KEY,
+        "language": "en-US",
+        "include_adult": False,
+        "include_video": False,
+        "sort_by": "popularity.desc",
+        "page": page,
+    }
+
+    if country:
+        params["with_origin_country"] = country
+
+    try:
+        resp = requests.get(url, params=params, timeout=15)
+    except requests.RequestException:
+        return JsonResponse({"results": [], "error": "Trending service unavailable."}, status=502)
+
+    data = resp.json() if resp.ok else {"results": [], "error": "Upstream TMDB error."}
+    return JsonResponse(data, status=resp.status_code)
+
+
+# ──────────────────────────────────────────────
+# Movie Lists – CRUD
+# ──────────────────────────────────────────────
+
+@login_required(login_url="login")
+def my_lists(request):
+    """Show all lists belonging to the logged-in user."""
+    lists = MovieList.objects.filter(user=request.user).prefetch_related("items")
+    return render(request, "EveryMovie/my_lists.html", {"lists": lists})
+
+
+@login_required(login_url="login")
+def create_list(request):
+    """Create a new list (POST only)."""
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        if not name:
+            messages.error(request, "List name cannot be empty.")
+        elif MovieList.objects.filter(user=request.user, name=name).exists():
+            messages.error(request, "You already have a list with that name.")
+        else:
+            MovieList.objects.create(user=request.user, name=name)
+            messages.success(request, f'List "{name}" created.')
+    return redirect(request.POST.get("next", "my_lists"))
+
+
+@login_required(login_url="login")
+def delete_list(request, list_id):
+    """Delete a list (POST only)."""
+    if request.method == "POST":
+        ml = get_object_or_404(MovieList, id=list_id, user=request.user)
+        ml.delete()
+        messages.success(request, "List deleted.")
+    return redirect("my_lists")
+
+
+@login_required(login_url="login")
+def rename_list(request, list_id):
+    """Rename a list (POST only)."""
+    if request.method == "POST":
+        ml = get_object_or_404(MovieList, id=list_id, user=request.user)
+        new_name = request.POST.get("name", "").strip()
+        if not new_name:
+            messages.error(request, "Name cannot be empty.")
+        elif MovieList.objects.filter(user=request.user, name=new_name).exclude(id=list_id).exists():
+            messages.error(request, "You already have a list with that name.")
+        else:
+            ml.name = new_name
+            ml.save()
+            messages.success(request, "List renamed.")
+    return redirect("my_lists")
+
+
+@login_required(login_url="login")
+def add_to_list(request, list_id):
+    """Add a movie to a list (POST). Expects tmdb_id, title, poster_path."""
+    if request.method == "POST":
+        ml = get_object_or_404(MovieList, id=list_id, user=request.user)
+        tmdb_id = request.POST.get("tmdb_id")
+        title = request.POST.get("title", "Untitled")
+        poster_path = request.POST.get("poster_path", "")
+        if not tmdb_id:
+            messages.error(request, "Missing movie id.")
+        elif MovieListItem.objects.filter(movie_list=ml, tmdb_id=tmdb_id).exists():
+            messages.error(request, f'"{title}" is already in "{ml.name}".')
+        else:
+            MovieListItem.objects.create(
+                movie_list=ml,
+                tmdb_id=int(tmdb_id),
+                title=title,
+                poster_path=poster_path,
+            )
+            messages.success(request, f'Added "{title}" to "{ml.name}".')
+    # Redirect back to the movie page
+    next_url = request.POST.get("next", "/")
+    return redirect(next_url)
+
+
+@login_required(login_url="login")
+def remove_from_list(request, item_id):
+    """Remove a movie from a list (POST only)."""
+    if request.method == "POST":
+        item = get_object_or_404(MovieListItem, id=item_id, movie_list__user=request.user)
+        item.delete()
+        messages.success(request, "Movie removed.")
+    return redirect(request.POST.get("next", "my_lists"))
+
+
+def api_lists(request):
+    """Return all lists for the current user as JSON.
+
+    Shape:
+    {
+      "lists": [
+        {"id": 1, "name": "🍿 Friday", "item_count": 5, "created_at": "..."},
+        ...
+      ]
+    }
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"detail": "Authentication required."}, status=401)
+
+    lists_qs = (
+        MovieList.objects
+        .filter(user=request.user)
+        .annotate(item_count=Count("items"))
+        .order_by("-created_at")
+    )
+
+    payload = {
+        "lists": [
+            {
+                "id": ml.id,
+                "name": ml.name,
+                "item_count": ml.item_count,
+                "created_at": ml.created_at.isoformat(),
+            }
+            for ml in lists_qs
+        ]
+    }
+    return JsonResponse(payload, status=200)

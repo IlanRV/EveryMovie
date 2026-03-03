@@ -1,0 +1,129 @@
+{% extends "EveryMovie/base.html" %}
+{% block content %}
+
+{% if error %}
+  <div class="panel" style="margin-top:24px;">
+    <p class="status">{{ error }}</p>
+    <a href="{% url 'home' %}" class="back-link">&#8592; Back to discover</a>
+  </div>
+{% else %}
+  <a href="{% url 'home' %}" class="back-link">&#8592; Back to discover</a>
+
+  <div class="movie-hero">
+    <div class="hero-poster">
+      {% if movie.poster_path %}
+        <img src="https://image.tmdb.org/t/p/w500{{ movie.poster_path }}"
+             alt="{{ movie.title }}">
+      {% else %}
+        <div style="aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;">No poster</div>
+      {% endif %}
+    </div>
+
+    <div class="hero-info">
+      <h1>{{ movie.title }}</h1>
+
+      {% if movie.tagline %}
+        <div class="tagline">"{{ movie.tagline }}"</div>
+      {% endif %}
+
+      <div class="hero-meta">
+        {% if movie.release_date %}
+          <span>{{ movie.release_date|slice:":4" }}</span>
+        {% endif %}
+        {% if movie.runtime %}
+          <span>{{ movie.runtime }} min</span>
+        {% endif %}
+        {% if movie.vote_average %}
+          <span class="rating-badge">★ {{ movie.vote_average }}</span>
+          <span>({{ movie.vote_count }} votes)</span>
+        {% endif %}
+        {% if director %}
+          <span>Directed by <strong>{{ director }}</strong></span>
+        {% endif %}
+      </div>
+
+      {% if movie.genres %}
+        <div class="genre-tags">
+          {% for g in movie.genres %}
+            <span class="genre-tag">{{ g.name }}</span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if movie.overview %}
+        <div class="overview">{{ movie.overview }}</div>
+      {% endif %}
+
+      {# ---- Add to List widget (logged-in only) ---- #}
+      {% if user.is_authenticated %}
+        <div class="add-to-list-widget">
+          {% if user_lists %}
+            <form method="post" action="" id="addToListForm" style="display:flex;gap:8px;align-items:center;">
+              {% csrf_token %}
+              <input type="hidden" name="tmdb_id" value="{{ movie.id }}">
+              <input type="hidden" name="title" value="{{ movie.title }}">
+              <input type="hidden" name="poster_path" value="{{ movie.poster_path }}">
+              <input type="hidden" name="next" value="{% url 'movie_detail' movie.id %}">
+              <select id="listPicker">
+                {% for l in user_lists %}
+                  <option value="{% url 'add_to_list' l.id %}">{{ l.name }}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="btn-add">&#10133; Add to list</button>
+            </form>
+            <script>
+              document.getElementById('listPicker').addEventListener('change', function() {
+                document.getElementById('addToListForm').action = this.value;
+              });
+              // Set initial action
+              document.getElementById('addToListForm').action = document.getElementById('listPicker').value;
+            </script>
+          {% else %}
+            <span style="color:var(--muted);font-size:13px;">No lists yet —</span>
+          {% endif %}
+
+          {# Inline create new list #}
+          <form method="post" action="{% url 'create_list' %}" class="inline-create">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{% url 'movie_detail' movie.id %}">
+            <input name="name" placeholder="New list name…" required>
+            <button type="submit">Create</button>
+          </form>
+        </div>
+
+        {% for msg in messages %}
+          <div style="margin-top:8px;" class="{% if msg.tags == 'success' %}success-msg{% else %}error-msg-global{% endif %}">{{ msg }}</div>
+        {% endfor %}
+      {% else %}
+        <div style="margin-top:14px;font-size:13px;color:var(--muted);">
+          <a href="{% url 'login' %}" style="color:var(--fg);font-weight:600;">Log in</a> to save this movie to a list.
+        </div>
+      {% endif %}
+
+    </div>
+  </div>
+
+  {% if cast %}
+    <div class="cast-section panel">
+      <h3>Top Cast</h3>
+      <div class="cast-grid">
+        {% for member in cast %}
+          <div class="cast-card">
+            {% if member.profile_path %}
+              <img src="https://image.tmdb.org/t/p/w185{{ member.profile_path }}"
+                   alt="{{ member.name }}">
+            {% else %}
+              <img src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'/>"
+                   alt="{{ member.name }}"
+                   style="background:rgba(255,255,255,0.06);">
+            {% endif %}
+            <div class="cast-name">{{ member.name }}</div>
+            <div class="cast-char">{{ member.character }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+{% endif %}
+
+{% endblock %}

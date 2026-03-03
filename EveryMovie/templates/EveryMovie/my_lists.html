@@ -1,0 +1,69 @@
+{% extends "EveryMovie/base.html" %}
+{% block content %}
+
+<div class="lists-header">
+  <h2>My Lists</h2>
+  <form method="post" action="{% url 'create_list' %}" class="inline-create">
+    {% csrf_token %}
+    <input name="name" placeholder="New list name…" required>
+    <button type="submit">+ Create list</button>
+  </form>
+</div>
+
+{% for msg in messages %}
+  <div class="{% if msg.tags == 'success' %}success-msg{% else %}error-msg-global{% endif %}">{{ msg }}</div>
+{% endfor %}
+
+{% if lists %}
+  {% for ml in lists %}
+    <div class="list-section">
+      <div class="list-section-header">
+        <h3>{{ ml.name }}</h3>
+        <div class="list-actions">
+          {# Rename #}
+          <form method="post" action="{% url 'rename_list' ml.id %}" style="display:flex;gap:4px;align-items:center;">
+            {% csrf_token %}
+            <input name="name" placeholder="Rename…" value="{{ ml.name }}"
+                   style="padding:5px 8px;background:var(--bg);color:var(--fg);border:1px solid var(--stroke);border-radius:8px;font-size:12px;width:120px;outline:none;">
+            <button type="submit" class="btn-sm">Rename</button>
+          </form>
+          {# Delete #}
+          <form method="post" action="{% url 'delete_list' ml.id %}" onsubmit="return confirm('Delete this list?');">
+            {% csrf_token %}
+            <button type="submit" class="btn-sm btn-danger">Delete</button>
+          </form>
+        </div>
+      </div>
+
+      {% if ml.items.all %}
+        <div class="list-items-grid">
+          {% for item in ml.items.all %}
+            <div class="list-item-card">
+              <a href="{% url 'movie_detail' item.tmdb_id %}">
+                {% if item.poster_path %}
+                  <img src="https://image.tmdb.org/t/p/w342{{ item.poster_path }}" alt="{{ item.title }}">
+                {% else %}
+                  <div style="width:100%;aspect-ratio:2/3;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.04);color:var(--muted);font-size:11px;">No poster</div>
+                {% endif %}
+              </a>
+              <div class="li-title">{{ item.title }}</div>
+              <form method="post" action="{% url 'remove_from_list' item.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{% url 'my_lists' %}">
+                <button type="submit" class="li-remove" title="Remove">×</button>
+              </form>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty-list">This list is empty. Browse movies and add them here!</p>
+      {% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <div class="panel" style="margin-top:22px;">
+    <p class="empty-list">You haven't created any lists yet. Use the form above to get started!</p>
+  </div>
+{% endif %}
+
+{% endblock %}

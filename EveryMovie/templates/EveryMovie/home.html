@@ -1,14 +1,15 @@
 {% extends "EveryMovie/base.html" %}
 {% block content %}
 
-<div class="panel">
+<div class="panel genre-banner">
+  <h2 class="banner-title">Explore by Genre</h2>
   <div class="scatter" id="genreScatter" aria-label="Genre selection"></div>
   <div class="status" id="genreStatus">Loading genres…</div>
 </div>
 
 <div class="panel">
   <div class="controls">
-    <label class="hint">Country</label>
+    <label class="hint">&#127760; Country</label>
     <select id="countrySelect" disabled>
       <option value="">Select a country</option>
       <option value="US">United States</option>
@@ -23,6 +24,7 @@
       <option value="NO">Norway</option>
       <option value="PL">Poland</option>
       <option value="TR">Turkey</option>
+      <option value="EC">Ecuador</option>
       <option value="IN">India</option>
       <option value="JP">Japan</option>
       <option value="KR">South Korea</option>
@@ -43,11 +45,54 @@
       <option value="az">A–Z</option>
     </select>
 
-    <button id="goBtn" disabled>Discover</button>
+    <button id="goBtn" disabled>&#127916; Discover</button>
+  </div>
+
+  <div class="controls" style="margin-top:10px;">
+    <label class="hint">Or search by title</label>
+    <input id="searchInput" class="search-input" type="text" placeholder="Type a movie title…" autocomplete="off">
+    <button id="searchBtn">Search</button>
   </div>
 
   <div class="status" id="discoverStatus">Choose a genre to begin.</div>
   <div class="grid" id="movieGrid"></div>
+</div>
+
+<div class="panel">
+  <div class="controls">
+    <label class="hint">Trending this week</label>
+    <select id="trendingCountrySelect">
+      <option value="">All countries</option>
+      <option value="US">United States</option>
+      <option value="GB">United Kingdom</option>
+      <option value="FR">France</option>
+      <option value="DE">Germany</option>
+      <option value="IT">Italy</option>
+      <option value="ES">Spain</option>
+      <option value="NL">Netherlands</option>
+      <option value="SE">Sweden</option>
+      <option value="DK">Denmark</option>
+      <option value="NO">Norway</option>
+      <option value="PL">Poland</option>
+      <option value="TR">Turkey</option>
+      <option value="EC">Ecuador</option>
+      <option value="IN">India</option>
+      <option value="JP">Japan</option>
+      <option value="KR">South Korea</option>
+      <option value="CN">China</option>
+      <option value="TW">Taiwan</option>
+      <option value="HK">Hong Kong</option>
+      <option value="MX">Mexico</option>
+      <option value="BR">Brazil</option>
+      <option value="AR">Argentina</option>
+      <option value="EG">Egypt</option>
+      <option value="ZA">South Africa</option>
+      <option value="AU">Australia</option>
+    </select>
+    <button id="trendingBtn">Load trending</button>
+  </div>
+  <div class="status" id="trendingStatus">Pick a country or leave as all, then load trending movies.</div>
+  <div class="trending-strip" id="trendingStrip"></div>
 </div>
 
 <script>
@@ -62,7 +107,53 @@
     go: document.getElementById("goBtn"),
     status: document.getElementById("discoverStatus"),
     grid: document.getElementById("movieGrid"),
+    searchInput: document.getElementById("searchInput"),
+    searchBtn: document.getElementById("searchBtn"),
+    trendingCountry: document.getElementById("trendingCountrySelect"),
+    trendingBtn: document.getElementById("trendingBtn"),
+    trendingStatus: document.getElementById("trendingStatus"),
+    trendingStrip: document.getElementById("trendingStrip"),
   };
+
+  // ---- genre colour map (TMDB IDs → tone-matching colours) ----
+  const GENRE_COLORS = {
+    28:    { bg: 'rgba(239, 68, 68, 0.18)',  border: 'rgba(239, 68, 68, 0.40)',  hex: '#ef4444' },  // Action – red
+    12:    { bg: 'rgba(234,179, 8, 0.18)',   border: 'rgba(234,179, 8, 0.40)',   hex: '#eab308' },  // Adventure – gold
+    16:    { bg: 'rgba(56,189,248, 0.18)',    border: 'rgba(56,189,248, 0.40)',   hex: '#38bdf8' },  // Animation – sky blue
+    35:    { bg: 'rgba(250,204, 21, 0.18)',   border: 'rgba(250,204, 21, 0.40)',  hex: '#facc15' },  // Comedy – yellow
+    80:    { bg: 'rgba(153, 27, 27, 0.22)',   border: 'rgba(153, 27, 27, 0.45)',  hex: '#991b1b' },  // Crime – velvet red
+    99:    { bg: 'rgba(148,163,184, 0.18)',   border: 'rgba(148,163,184, 0.40)',  hex: '#94a3b8' },  // Documentary – slate
+    18:    { bg: 'rgba(139, 92,246, 0.18)',   border: 'rgba(139, 92,246, 0.40)',  hex: '#8b5cf6' },  // Drama – violet
+    10751: { bg: 'rgba(251,146,60, 0.18)',    border: 'rgba(251,146,60, 0.40)',   hex: '#fb923c' },  // Family – orange
+    14:    { bg: 'rgba(168,85,247, 0.18)',    border: 'rgba(168,85,247, 0.40)',   hex: '#a855f7' },  // Fantasy – purple
+    36:    { bg: 'rgba(180,83, 9, 0.20)',     border: 'rgba(180,83, 9, 0.42)',    hex: '#b45309' },  // History – brown/amber
+    27:    { bg: 'rgba(220, 38, 38, 0.20)',   border: 'rgba(220, 38, 38, 0.45)',  hex: '#dc2626' },  // Horror – deep red
+    10402: { bg: 'rgba(34,211,238, 0.18)',    border: 'rgba(34,211,238, 0.40)',   hex: '#22d3ee' },  // Music – cyan
+    9648:  { bg: 'rgba(99, 102,241, 0.18)',   border: 'rgba(99,102,241, 0.40)',   hex: '#6366f1' },  // Mystery – indigo
+    10749: { bg: 'rgba(244,114,182, 0.20)',   border: 'rgba(244,114,182, 0.42)',  hex: '#f472b6' },  // Romance – pink
+    878:   { bg: 'rgba(20,184,166, 0.18)',    border: 'rgba(20,184,166, 0.40)',   hex: '#14b8a6' },  // Sci-Fi – teal
+    10770: { bg: 'rgba(161,161,170, 0.16)',   border: 'rgba(161,161,170, 0.35)',  hex: '#a1a1aa' },  // TV Movie – grey
+    53:    { bg: 'rgba(245,158, 11, 0.18)',   border: 'rgba(245,158, 11, 0.40)',  hex: '#f59e0b' },  // Thriller – amber
+    10752: { bg: 'rgba(107,114,128, 0.20)',   border: 'rgba(107,114,128, 0.42)',  hex: '#6b7280' },  // War – steel grey
+    37:    { bg: 'rgba(217,119, 6, 0.18)',    border: 'rgba(217,119, 6, 0.40)',   hex: '#d97706' },  // Western – warm amber
+  };
+
+  const DEFAULT_COLOR = { bg: 'rgba(255,255,255,0.06)', border: 'rgba(255,255,255,0.15)', hex: '#a1a1aa' };
+
+  function chipStyle(genreId) {
+    const ids = String(genreId).split(',').map(Number);
+    if (ids.length === 1) {
+      const c = GENRE_COLORS[ids[0]] || DEFAULT_COLOR;
+      return { background: c.bg, borderColor: c.border };
+    }
+    // pair: gradient between the two genre colours
+    const c1 = GENRE_COLORS[ids[0]] || DEFAULT_COLOR;
+    const c2 = GENRE_COLORS[ids[1]] || DEFAULT_COLOR;
+    return {
+      background: `linear-gradient(135deg, ${c1.bg} 0%, ${c2.bg} 100%)`,
+      borderColor: c1.border,
+    };
+  }
 
   // ---- helpers ----
   function setEnabled(enabled) {
@@ -80,6 +171,10 @@
     el.grid.innerHTML = "";
   }
 
+  function clearTrendingStrip() {
+    el.trendingStrip.innerHTML = "";
+  }
+
   function renderMovies(movies) {
     clearGrid();
 
@@ -89,8 +184,9 @@
     }
 
     for (const m of movies) {
-      const card = document.createElement("div");
+      const card = document.createElement("a");
       card.className = "card";
+      card.href = `/movie/${m.id}/`;
 
       const poster = document.createElement("div");
       poster.className = "poster";
@@ -138,6 +234,64 @@
     }
   }
 
+  function renderTrending(movies) {
+    clearTrendingStrip();
+
+    if (!movies || movies.length === 0) {
+      el.trendingStatus.textContent = "No trending movies found for this country.";
+      return;
+    }
+
+    for (const m of movies.slice(0, 20)) {
+      const card = document.createElement("a");
+      card.className = "trending-card";
+      card.href = `/movie/${m.id}/`;
+
+      const poster = document.createElement("div");
+      poster.className = "poster";
+
+      const url = posterUrl(m.poster_path);
+      if (url) {
+        const img = document.createElement("img");
+        img.src = url;
+        img.alt = m.title || m.original_title || "Movie poster";
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "cover";
+        poster.appendChild(img);
+      } else {
+        poster.textContent = "No poster";
+      }
+
+      const meta = document.createElement("div");
+      meta.className = "meta";
+
+      const title = document.createElement("div");
+      title.className = "title";
+      title.textContent = m.original_title || m.title || "Untitled";
+
+      const sub = document.createElement("div");
+      sub.className = "sub";
+
+      const year = document.createElement("span");
+      year.textContent = (m.release_date ? m.release_date.slice(0,4) : "—");
+
+      const rating = document.createElement("span");
+      rating.textContent = (typeof m.vote_average === "number" ? `★ ${m.vote_average.toFixed(1)}` : "★ —");
+
+      sub.appendChild(year);
+      sub.appendChild(rating);
+
+      meta.appendChild(title);
+      meta.appendChild(sub);
+
+      card.appendChild(poster);
+      card.appendChild(meta);
+
+      el.trendingStrip.appendChild(card);
+    }
+  }
+
   function placeChips(items) {
     el.scatter.innerHTML = "";
 
@@ -152,6 +306,11 @@
         chip.dataset.genreId = item.id;
         chip.style.left = "8px";
         chip.style.top = `${8 + i * 40}px`;
+
+        const cs = chipStyle(item.id);
+        chip.style.background = cs.background;
+        chip.style.borderColor = cs.borderColor;
+
 
         chip.addEventListener("click", () => {
           selectedGenreId = item.id;
@@ -174,6 +333,11 @@
       chip.textContent = item.name;
       chip.dataset.genreId = item.id;
       chip.style.visibility = "hidden";
+
+      const cs = chipStyle(item.id);
+      chip.style.background = cs.background;
+      chip.style.borderColor = cs.borderColor;
+
       el.scatter.appendChild(chip);
       const width = chip.offsetWidth || 80;
       const height = chip.offsetHeight || 32;
@@ -336,6 +500,53 @@
     }
   }
 
+  async function searchByTitle() {
+    const q = (el.searchInput.value || "").trim();
+    if (!q) {
+      el.status.textContent = "Type a title to search.";
+      return;
+    }
+
+    el.status.textContent = `Searching for "${q}"…`;
+    clearGrid();
+
+    const params = new URLSearchParams({ q });
+    try {
+      const res = await fetch(`/search/?${params.toString()}`);
+      if (!res.ok) throw new Error(`Search error: ${res.status}`);
+      const data = await res.json();
+      const movies = Array.isArray(data) ? data : (data.results || []);
+      el.status.textContent = `Found ${movies.length} results for "${q}".`;
+      renderMovies(movies);
+    } catch (e) {
+      el.status.textContent = `Failed to search. ${e.message}`;
+    }
+  }
+
+  async function loadTrending() {
+    const country = (el.trendingCountry.value || "").trim();
+    const params = new URLSearchParams();
+    if (country) params.set("country", country);
+
+    el.trendingStatus.textContent = country
+      ? `Loading trending movies for ${country}…`
+      : "Loading trending movies across all countries…";
+    clearTrendingStrip();
+
+    try {
+      const res = await fetch(`/api/trending/${params.toString() ? `?${params.toString()}` : ""}`);
+      if (!res.ok) throw new Error(`Trending error: ${res.status}`);
+      const data = await res.json();
+      const movies = Array.isArray(data) ? data : (data.results || []);
+      el.trendingStatus.textContent = country
+        ? `Showing trending movies for ${country}.`
+        : "Showing trending movies across all countries.";
+      renderTrending(movies);
+    } catch (e) {
+      el.trendingStatus.textContent = `Failed to load trending. ${e.message}`;
+    }
+  }
+
   // ---- events ----
   el.country.addEventListener("change", () => {
     el.go.disabled = !selectedGenreId || !el.country.value;
@@ -347,9 +558,20 @@
 
   el.go.addEventListener("click", discover);
 
+  el.searchBtn.addEventListener("click", searchByTitle);
+  el.searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      searchByTitle();
+    }
+  });
+
+  el.trendingBtn.addEventListener("click", loadTrending);
+
   // initial
   setEnabled(false);
   loadGenres();
+  loadTrending();
 
   // re-layout chips on resize
   window.addEventListener("resize", () => {

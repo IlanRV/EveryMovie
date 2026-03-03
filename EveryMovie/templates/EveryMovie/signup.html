@@ -1,0 +1,31 @@
+{% extends "EveryMovie/base.html" %}
+{% block content %}
+<div class="auth-panel">
+  <h2>Create an account</h2>
+
+  {% for msg in messages %}
+    <div class="error-msg">{{ msg }}</div>
+  {% endfor %}
+
+  <form method="post">
+    {% csrf_token %}
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" autocomplete="username" required autofocus
+           value="{{ request.POST.username|default:'' }}">
+
+    <label for="email">Email</label>
+    <input id="email" name="email" type="email" autocomplete="email" required
+           value="{{ request.POST.email|default:'' }}">
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" required>
+
+    <label for="password2">Confirm password</label>
+    <input id="password2" name="password2" type="password" autocomplete="new-password" required>
+
+    <button class="btn" type="submit">Sign up</button>
+  </form>
+
+  <div class="switch">Already have an account? <a href="{% url 'login' %}">Log in</a></div>
+</div>
+{% endblock %}
