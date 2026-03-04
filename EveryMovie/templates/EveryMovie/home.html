@@ -294,144 +294,16 @@
 
   function placeChips(items) {
     el.scatter.innerHTML = "";
-
-    const isMobile = window.matchMedia("(max-width: 768px)").matches;
-
-    if (isMobile) {
-      // Mobile: alphabetical flow layout (no scatter)
-      const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
-      sorted.forEach((item) => {
-        const chip = document.createElement("div");
-        chip.className = "chip";
-        chip.textContent = item.name;
-        chip.dataset.genreId = item.id;
-
-        const cs = chipStyle(item.id);
-        chip.style.background = cs.background;
-        chip.style.borderColor = cs.borderColor;
-
-        chip.addEventListener("click", () => {
-          selectedGenreId = item.id;
-          document.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
-          chip.classList.add("selected");
-          el.genreStatus.textContent = `Selected genre: ${item.name}`;
-          el.status.textContent = "Now select a country, then click Discover.";
-          setEnabled(true);
-        });
-
-        el.scatter.appendChild(chip);
-      });
-      return;
-    }
-
-    const W = el.scatter.clientWidth || el.scatter.offsetWidth;
-    const H = el.scatter.clientHeight || el.scatter.offsetHeight;
-    if (!W || !H) {
-      // Fallback: simple stacked layout if we can't measure the area
-      items.forEach((item, i) => {
-        const chip = document.createElement("div");
-        chip.className = "chip";
-        chip.textContent = item.name;
-        chip.dataset.genreId = item.id;
-        chip.style.left = "8px";
-        chip.style.top = `${8 + i * 40}px`;
-
-        const cs = chipStyle(item.id);
-        chip.style.background = cs.background;
-        chip.style.borderColor = cs.borderColor;
-
-
-        chip.addEventListener("click", () => {
-          selectedGenreId = item.id;
-          document.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
-          chip.classList.add("selected");
-          el.genreStatus.textContent = `Selected genre: ${item.name}`;
-          el.status.textContent = "Now select a country, then click Discover.";
-          setEnabled(true);
-        });
-
-        el.scatter.appendChild(chip);
-      });
-      return;
-    }
-
-    // First, create all chips so we can measure their sizes
-    const chipItems = items.map((item) => {
+    const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+    sorted.forEach((item) => {
       const chip = document.createElement("div");
       chip.className = "chip";
       chip.textContent = item.name;
       chip.dataset.genreId = item.id;
-      chip.style.visibility = "hidden";
 
       const cs = chipStyle(item.id);
       chip.style.background = cs.background;
       chip.style.borderColor = cs.borderColor;
-
-      el.scatter.appendChild(chip);
-      const width = chip.offsetWidth || 80;
-      const height = chip.offsetHeight || 32;
-      return { item, chip, width, height, x: 0, y: 0 };
-    });
-
-    const padding = 10;
-    const maxAttempts = 200;
-
-    function overlaps(a, b) {
-      const ax = a.x + a.width / 2;
-      const ay = a.y + a.height / 2;
-      const bx = b.x + b.width / 2;
-      const by = b.y + b.height / 2;
-      const dx = ax - bx;
-      const dy = ay - by;
-      const distSq = dx * dx + dy * dy;
-      // radius is roughly "button radius" plus a tiny margin so they never touch
-      const ra = Math.max(a.width, a.height) / 2;
-      const rb = Math.max(b.width, b.height) / 2;
-      const margin = 10; // tiny bit further than touching
-      const minDist = ra + rb + margin;
-      return distSq < minDist * minDist;
-    }
-
-    const placed = [];
-
-    chipItems.forEach((item) => {
-      const maxX = Math.max(padding, W - item.width - padding);
-      const maxY = Math.max(padding, H - item.height - padding);
-
-      let attempt = 0;
-      let ok = false;
-      while (attempt < maxAttempts && !ok) {
-        // random position within the scatter area
-        const x = padding + Math.random() * (maxX - padding);
-        const y = padding + Math.random() * (maxY - padding);
-
-        item.x = x;
-        item.y = y;
-
-        ok = true;
-        for (const other of placed) {
-          if (overlaps(item, other)) {
-            ok = false;
-            break;
-          }
-        }
-        attempt++;
-      }
-
-      if (ok) {
-        placed.push(item);
-      } else {
-        // If we really can't find a non-overlapping spot, drop this chip
-        // rather than forcing an overlap.
-        item.chip.remove();
-      }
-    });
-
-    // Apply final positions and behaviour
-    placed.forEach(({ item, chip, x, y }) => {
-      chip.style.left = `${x}px`;
-      chip.style.top = `${y}px`;
-      chip.style.visibility = "visible";
 
       chip.addEventListener("click", () => {
         selectedGenreId = item.id;
@@ -441,6 +313,8 @@
         el.status.textContent = "Now select a country, then click Discover.";
         setEnabled(true);
       });
+
+      el.scatter.appendChild(chip);
     });
   }
 

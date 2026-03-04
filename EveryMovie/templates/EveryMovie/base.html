@@ -130,15 +130,16 @@
     }
 
     .scatter {
-      position: relative;
-      min-height: 340px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 14px;
       border-radius: var(--radius);
       border: 1px dashed rgba(139,92,246,0.16);
-      overflow: hidden;
       background: radial-gradient(ellipse at 50% 50%, var(--accent-glow) 0%, transparent 70%);
+      justify-content: center;
     }
     .chip {
-      position: absolute;
       padding: 10px 12px;
       border-radius: 999px;
       border: 1px solid var(--stroke);
@@ -159,23 +160,6 @@
       filter: brightness(1.5);
       box-shadow: 0 0 18px rgba(255,255,255,0.12);
       transform: scale(1.06);
-    }
-
-    /* ── Mobile: flow-layout chips instead of scatter ── */
-    @media (max-width: 768px) {
-      .scatter {
-        min-height: auto;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px;
-        padding: 12px;
-        justify-content: center;
-      }
-      .chip {
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-      }
     }
 
     .controls { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
