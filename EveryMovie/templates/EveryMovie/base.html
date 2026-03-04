@@ -162,6 +162,24 @@
       transform: scale(1.06);
     }
 
+    /* ── Mobile: compact scrollable chip area ── */
+    @media (max-width: 768px) {
+      .scatter {
+        max-height: 320px;
+        overflow-y: auto;
+        gap: 8px;
+        padding: 10px;
+      }
+      .chip {
+        padding: 7px 10px;
+        font-size: 13px;
+      }
+      .banner-title {
+        font-size: 20px;
+        margin-bottom: 10px;
+      }
+    }
+
     .controls { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     select, button {
       background: var(--card);
