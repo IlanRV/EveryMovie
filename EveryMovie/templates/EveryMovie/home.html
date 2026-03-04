@@ -295,6 +295,35 @@
   function placeChips(items) {
     el.scatter.innerHTML = "";
 
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+
+    if (isMobile) {
+      // Mobile: alphabetical flow layout (no scatter)
+      const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+      sorted.forEach((item) => {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.textContent = item.name;
+        chip.dataset.genreId = item.id;
+
+        const cs = chipStyle(item.id);
+        chip.style.background = cs.background;
+        chip.style.borderColor = cs.borderColor;
+
+        chip.addEventListener("click", () => {
+          selectedGenreId = item.id;
+          document.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+          chip.classList.add("selected");
+          el.genreStatus.textContent = `Selected genre: ${item.name}`;
+          el.status.textContent = "Now select a country, then click Discover.";
+          setEnabled(true);
+        });
+
+        el.scatter.appendChild(chip);
+      });
+      return;
+    }
+
     const W = el.scatter.clientWidth || el.scatter.offsetWidth;
     const H = el.scatter.clientHeight || el.scatter.offsetHeight;
     if (!W || !H) {

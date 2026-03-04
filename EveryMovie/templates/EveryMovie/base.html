@@ -161,6 +161,23 @@
       transform: scale(1.06);
     }
 
+    /* ── Mobile: flow-layout chips instead of scatter ── */
+    @media (max-width: 768px) {
+      .scatter {
+        min-height: auto;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px;
+        justify-content: center;
+      }
+      .chip {
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+      }
+    }
+
     .controls { display:flex; gap: 12px; flex-wrap: wrap; align-items: center; }
     select, button {
       background: var(--card);
