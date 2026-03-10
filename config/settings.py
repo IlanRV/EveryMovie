@@ -34,6 +34,10 @@ SECRET_KEY = 'django-insecure-#+*ecs^i!pkz^oyt=syx4@j6x7$al+xp&y-cvnh^$7+zs9s!gd
 DEBUG = os.environ.get("DEBUG", "False") == "True"
 ALLOWED_HOSTS = os.environ.get("ALLOWED_HOSTS", "").split()
 
+CSRF_TRUSTED_ORIGINS = [
+    f"https://{host}" for host in os.environ.get("ALLOWED_HOSTS", "").split()
+]
+
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"

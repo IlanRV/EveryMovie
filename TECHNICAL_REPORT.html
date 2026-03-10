@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>TECHNICAL_REPORT.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<h1 id="everymovie--technical-report">EveryMovie — Technical Report</h1>
+<p><strong>Module:</strong> COMP3011 Web Services and Web Data<br>
+<strong>Student:</strong> [Your Name]<br>
+<strong>Student ID:</strong> [Your ID]<br>
+<strong>Date:</strong> March 2026<br>
+<strong>GitHub Repository:</strong> <a href="https://github.com/YOUR_USERNAME/EveryMovie">https://github.com/YOUR_USERNAME/EveryMovie</a><br>
+<strong>Live Deployment:</strong> <a href="https://everymovie.onrender.com">https://everymovie.onrender.com</a><br>
+<strong>API Documentation:</strong> See <code>API_DOCUMENTATION.pdf</code> in the repository root.</p>
+<hr>
+<h2 id="1-introduction--project-overview">1. Introduction &amp; Project Overview</h2>
+<p>EveryMovie is a movie discovery web application that enables users to explore films by genre and country of origin. The application consumes The Movie Database (TMDB) API to provide real-time access to movie metadata, genres, trending titles, and search functionality.</p>
+<p>Key features include:</p>
+<ul>
+<li><strong>Genre Discovery</strong> with dynamically detected genre pairs (e.g. Action/Comedy, Animation/Science Fiction), derived by sampling popular and top-rated films from TMDB.</li>
+<li><strong>Country &amp; Sort Filters</strong> allowing users to discover films from 16+ countries, sorted by rating or alphabetically.</li>
+<li><strong>Movie Search</strong> powered by TMDB's full-text search endpoint.</li>
+<li><strong>Movie Detail Pages</strong> displaying overview, director, cast, genres, runtime, and user rating.</li>
+<li><strong>User Accounts</strong> with secure registration and login.</li>
+<li><strong>Personal Movie Lists</strong> — authenticated users can create, rename, delete, and populate custom lists with CRUD operations backed by a relational database.</li>
+<li><strong>Trending Strip</strong> showcasing currently popular titles.</li>
+<li><strong>Responsive Design</strong> optimised for both desktop and mobile devices.</li>
+</ul>
+<p>The application exposes five JSON API endpoints (<code>/genres/</code>, <code>/discover/</code>, <code>/search/</code>, <code>/api/trending/</code>, <code>/api/lists/</code>) alongside traditional HTML page routes, fulfilling the requirement for a data-driven web API with database integration.</p>
+<hr>
+<h2 id="2-technology-stack-justification">2. Technology Stack Justification</h2>
+<h3 id="programming-language-python">Programming Language: Python</h3>
+<p>Python was chosen for its readability, extensive standard library, and strong ecosystem for web development. Its simplicity allowed rapid prototyping while maintaining clean, maintainable code.</p>
+<h3 id="framework-django-6">Framework: Django 6</h3>
+<p>Django was selected over alternatives such as FastAPI, Express.js, and Go Fiber for several reasons:</p>
+<ul>
+<li><strong>Batteries-included philosophy</strong> — Django provides a built-in ORM, authentication system, admin panel, templating engine, and CSRF protection out of the box, reducing the need for third-party dependencies.</li>
+<li><strong>Familiarity from module content</strong> — Django was introduced in the module's practical sessions, providing a solid foundation to build upon.</li>
+<li><strong>Mature security defaults</strong> — Django's authentication framework automatically handles password hashing (PBKDF2-SHA256 with per-user random salts), session management, and protection against common web vulnerabilities (XSS, CSRF, SQL injection).</li>
+</ul>
+<p>FastAPI could have offered better performance for a purely API-focused application, but Django's integrated templating and auth system made it more suitable for a full-stack application serving both HTML pages and JSON endpoints.</p>
+<h3 id="database-sqlite">Database: SQLite</h3>
+<p>SQLite was chosen as the database engine because:</p>
+<ul>
+<li><strong>Zero configuration</strong> — no separate database server is required, making development and deployment straightforward.</li>
+<li><strong>Sufficient for scope</strong> — the application stores only user-created lists and list items; all movie data is fetched on demand from TMDB. The data volume is modest.</li>
+<li><strong>Portability</strong> — the database file is self-contained, simplifying local development and testing.</li>
+</ul>
+<p>For a production system with many concurrent users, PostgreSQL would be a more appropriate choice due to its superior concurrency handling and support for connection pooling.</p>
+<h3 id="external-api-tmdb">External API: TMDB</h3>
+<p>The Movie Database (TMDB) API v3 was selected as the primary data source because it provides comprehensive, well-documented, and freely accessible movie metadata including genres, credits, ratings, and poster images. Its <code>/discover/movie</code> endpoint supports flexible filtering by genre, country, and sorting criteria, which aligns directly with the application's core functionality.</p>
+<h3 id="deployment-render--gunicorn--whitenoise">Deployment: Render + Gunicorn + WhiteNoise</h3>
+<p>Render was chosen for deployment as it offers free-tier hosting with automatic deployments from GitHub. Gunicorn serves as the production WSGI server, and WhiteNoise handles efficient static file serving without requiring a separate CDN or web server.</p>
+<hr>
+<h2 id="3-architecture--design">3. Architecture &amp; Design</h2>
+<h3 id="system-architecture">System Architecture</h3>
+<p>The application follows a three-tier architecture:</p>
+<pre class="hljs"><code><div>┌─────────────┐     HTTP/JSON      ┌──────────────┐     HTTP/JSON     ┌──────────────┐
+│   Browser   │  ◄──────────────►  │    Django     │  ──────────────►  │   TMDB API   │
+│  (Frontend) │                    │   (Backend)   │                   │   (v3)       │
+└─────────────┘                    └──────┬───────┘                   └──────────────┘
+                                          │
+                                          ▼
+                                   ┌──────────────┐
+                                   │   SQLite DB   │
+                                   │ (User Lists)  │
+                                   └──────────────┘
+</div></code></pre>
+<ol>
+<li><strong>Frontend</strong> — Django templates with vanilla JavaScript making <code>fetch()</code> calls to internal JSON endpoints.</li>
+<li><strong>Backend</strong> — Django views handle routing, TMDB API consumption, data transformation, and database CRUD.</li>
+<li><strong>Database</strong> — SQLite stores user accounts (via Django's <code>auth_user</code> table) and movie lists (<code>MovieList</code>, <code>MovieListItem</code>).</li>
+</ol>
+<h3 id="url--endpoint-design">URL &amp; Endpoint Design</h3>
+<p>Endpoints follow RESTful conventions where practical:</p>
+<ul>
+<li><strong>JSON API endpoints</strong> use descriptive paths: <code>/genres/</code>, <code>/discover/</code>, <code>/search/</code>, <code>/api/trending/</code>, <code>/api/lists/</code>.</li>
+<li><strong>CRUD operations</strong> for lists use resource-oriented URLs: <code>/lists/create/</code>, <code>/lists/&lt;id&gt;/rename/</code>, <code>/lists/&lt;id&gt;/delete/</code>, <code>/lists/&lt;id&gt;/add/</code>, <code>/lists/item/&lt;id&gt;/remove/</code>.</li>
+<li>Query parameters are used for filtering (<code>?genre=28&amp;country=US&amp;sort=rating</code>), keeping URLs clean and bookmarkable.</li>
+</ul>
+<h3 id="database-schema">Database Schema</h3>
+<p>Two models support the user lists feature:</p>
+<table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Fields</th>
+<th>Constraints</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MovieList</code></td>
+<td><code>user</code> (FK → User), <code>name</code>, <code>created_at</code></td>
+<td>Unique together: <code>(user, name)</code></td>
+</tr>
+<tr>
+<td><code>MovieListItem</code></td>
+<td><code>movie_list</code> (FK → MovieList), <code>tmdb_id</code>, <code>title</code>, <code>poster_path</code>, <code>added_at</code></td>
+<td>Unique together: <code>(movie_list, tmdb_id)</code></td>
+</tr>
+</tbody>
+</table>
+<p>Only the TMDB movie ID, title, and poster path are stored locally. All other movie data is fetched from TMDB on demand, avoiding data duplication and keeping the database lightweight.</p>
+<h3 id="genre-pair-detection">Genre Pair Detection</h3>
+<p>A notable design decision was the dynamic genre pair detection algorithm. Rather than hard-coding genre combinations, the <code>/genres/</code> endpoint samples popular and top-rated movies from TMDB and extracts all two-genre combinations that actually appear. This produces realistic pairs like &quot;Action/Comedy&quot; or &quot;Animation/Science Fiction&quot; that reflect TMDB's current catalogue.</p>
+<h3 id="dynamic-quality-filtering">Dynamic Quality Filtering</h3>
+<p>The <code>/discover/</code> endpoint implements a dynamic quality filter for rating-based sorts. It first probes TMDB to estimate the total catalogue size for the given genre/country combination, then sets a minimum vote count threshold proportional to the catalogue size. This ensures that results are ordered by genuinely well-rated films rather than obscure titles with a single 10/10 vote.</p>
+<hr>
+<h2 id="4-testing-approach">4. Testing Approach</h2>
+<p>The application includes 8 automated tests across two test classes, run via Django's built-in test framework (<code>python manage.py test</code>).</p>
+<h3 id="test-coverage">Test Coverage</h3>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>What It Verifies</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>test_genres_endpoint_returns_json</code></td>
+<td><code>/genres/</code> returns JSON with a <code>genres</code> key</td>
+</tr>
+<tr>
+<td><code>test_search_requires_query_param</code></td>
+<td><code>/search/</code> returns 400 when <code>q</code> is missing</td>
+</tr>
+<tr>
+<td><code>test_trending_endpoint_basic</code></td>
+<td><code>/api/trending/</code> returns JSON with <code>results</code></td>
+</tr>
+<tr>
+<td><code>test_discover_requires_genre_and_country</code></td>
+<td><code>/discover/</code> enforces both <code>genre</code> and <code>country</code> parameters</td>
+</tr>
+<tr>
+<td><code>test_signup_creates_user</code></td>
+<td>POST to <code>/signup/</code> creates a new user in the database</td>
+</tr>
+<tr>
+<td><code>test_login_and_access_my_lists</code></td>
+<td>An authenticated user can access <code>/my-lists/</code></td>
+</tr>
+<tr>
+<td><code>test_create_list_and_appears_in_api_lists</code></td>
+<td>Creating a list via POST appears in <code>/api/lists/</code> JSON response</td>
+</tr>
+<tr>
+<td><code>test_api_lists_requires_authentication</code></td>
+<td><code>/api/lists/</code> returns 401 for unauthenticated requests</td>
+</tr>
+</tbody>
+</table>
+<h3 id="testing-strategy">Testing Strategy</h3>
+<p>Tests focus on <strong>input validation</strong>, <strong>authentication enforcement</strong>, and <strong>end-to-end flows</strong> (create → verify via API). Some tests depend on TMDB being reachable; if the external service is down, those tests accept 502/503 status codes as valid responses rather than failing.</p>
+<h3 id="limitations">Limitations</h3>
+<ul>
+<li>Tests do not mock the TMDB API, so they require network access.</li>
+<li>Frontend behaviour (JavaScript interactions) is not covered by automated tests.</li>
+<li>No load/performance testing was conducted, which would be important for a production deployment.</li>
+</ul>
+<hr>
+<h2 id="5-challenges--lessons-learned">5. Challenges &amp; Lessons Learned</h2>
+<p>[<strong>WRITE THIS SECTION IN YOUR OWN WORDS. Include 3–4 challenges you encountered. Some real examples from our development:</strong>]</p>
+<ul>
+<li>
+<p><strong>Deployment issues</strong> — The first attempt to deploy on Render failed because <code>requirements.txt</code> was missing from the repository. After generating it with <code>pip freeze</code>, the build command was accidentally pasted with Markdown formatting (square brackets and links), causing a shell syntax error. This taught me the importance of carefully verifying deployment configurations.</p>
+</li>
+<li>
+<p><strong>Mobile responsiveness</strong> — The genre scatter layout initially used absolute positioning with a collision-avoidance algorithm. On mobile, chips would shift unpredictably when scrolling. The solution was to replace the scatter with a simpler alphabetical flex-wrap layout that works reliably across all screen sizes.</p>
+</li>
+<li>
+<p><strong>Genre pair rendering</strong> — Applying gradient backgrounds to genre pairs initially broke the rounded pill shape of chips due to CSS <code>border-image</code> overriding <code>border-radius</code>. The fix was to use <code>background</code> gradients instead.</p>
+</li>
+<li>
+<p><strong>Dynamic quality filtering</strong> — Sorting by rating surfaced obscure movies with very few votes. Implementing a dynamic vote count threshold based on catalogue size required iterative tuning to balance result quality with coverage for niche genre/country combinations.</p>
+</li>
+</ul>
+<hr>
+<h2 id="6-limitations--future-work">6. Limitations &amp; Future Work</h2>
+<h3 id="current-limitations">Current Limitations</h3>
+<ul>
+<li><strong>SQLite</strong> is not suitable for high-concurrency production use. Under heavy load, write operations could block.</li>
+<li><strong>No caching</strong> — every page load triggers fresh TMDB API calls, which adds latency and risks hitting TMDB's rate limits.</li>
+<li><strong>No pagination UI</strong> — the frontend fetches only the first page of results for discover and search.</li>
+<li><strong>Session-based auth only</strong> — the JSON APIs use session cookies rather than token-based authentication (e.g. JWT), making them less suitable for third-party consumers.</li>
+</ul>
+<h3 id="potential-improvements">Potential Improvements</h3>
+<ul>
+<li><strong>PostgreSQL</strong> for production database with proper connection pooling.</li>
+<li><strong>Redis caching</strong> for TMDB responses to reduce latency and API call volume.</li>
+<li><strong>Infinite scroll / pagination</strong> in the frontend for discover and search results.</li>
+<li><strong>Token-based authentication</strong> (JWT or API keys) to support external API consumers.</li>
+<li><strong>User ratings and reviews</strong> stored locally to complement TMDB data.</li>
+<li><strong>Recommendation engine</strong> using collaborative filtering based on users' saved lists.</li>
+</ul>
+<hr>
+<h2 id="7-generative-ai-declaration--analysis">7. Generative AI Declaration &amp; Analysis</h2>
+<h3 id="tools-used">Tools Used</h3>
+<table>
+<thead>
+<tr>
+<th>Tool</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>GitHub Copilot (Claude model) via VS Code</td>
+<td>Code generation, debugging, architecture design, deployment guidance, documentation drafting, CSS/responsive design</td>
+</tr>
+</tbody>
+</table>
+<h3 id="how-ai-was-used">How AI Was Used</h3>
+<p>[<strong>PERSONALISE THIS SECTION. Below is a template — adapt it to reflect your genuine experience:</strong>]</p>
+<p>GitHub Copilot was used as an integrated development partner throughout the project. The primary modes of usage were:</p>
+<ol>
+<li>
+<p><strong>Architecture &amp; Planning</strong> — I discussed the system architecture with Copilot, exploring how to structure the Django project, design the URL schema, and decide which data to store locally vs. fetch from TMDB on demand.</p>
+</li>
+<li>
+<p><strong>Code Implementation</strong> — Copilot assisted in writing Django views, models, templates, and JavaScript. For each feature, I described the desired behaviour and reviewed the generated code before integrating it, making manual adjustments where needed.</p>
+</li>
+<li>
+<p><strong>Problem Solving</strong> — When issues arose (e.g. the genre pair gradient breaking pill shapes, or mobile scatter layout instability), I described the problem to Copilot and evaluated its proposed solutions.</p>
+</li>
+<li>
+<p><strong>Deployment</strong> — Copilot guided the Render deployment configuration, including environment variable setup, build/start commands, and diagnosing build failures.</p>
+</li>
+<li>
+<p><strong>Documentation</strong> — The API documentation and this technical report were drafted with Copilot's assistance, then reviewed and personalised.</p>
+</li>
+</ol>
+<h3 id="analysis--reflection">Analysis &amp; Reflection</h3>
+<p>[<strong>WRITE THIS PART YOURSELF. Consider:</strong>]</p>
+<ul>
+<li>How did using AI change your development workflow compared to working without it?</li>
+<li>What did you learn from reviewing and adapting AI-generated code?</li>
+<li>Were there cases where the AI suggested something incorrect or suboptimal, and how did you handle those?</li>
+<li>What would you have done differently if AI tools were not available?</li>
+</ul>
+<h3 id="conversation-logs">Conversation Logs</h3>
+<p>Selected conversation logs demonstrating AI usage are attached as Appendix A (supplementary material).</p>
+<hr>
+<h2 id="references">References</h2>
+<ol>
+<li>The Movie Database (TMDB) API v3 — https://developer.themoviedb.org/docs</li>
+<li>Django Documentation (v6.0) — https://docs.djangoproject.com/en/6.0/</li>
+<li>WhiteNoise Documentation — http://whitenoise.evans.io/</li>
+<li>Render Deployment Documentation — https://docs.render.com/</li>
+<li>OWASP Password Storage Cheat Sheet — https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html</li>
+</ol>
+
+</body>
+</html>
